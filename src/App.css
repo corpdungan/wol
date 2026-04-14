@@ -1,0 +1,255 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app {
+  min-height: 100vh;
+  padding-bottom: 24px;
+}
+
+/* Header */
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px 20px 22px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+
+.app-header-top {
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: clamp(22px, 4vw, 30px);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.theme-toggle-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.user-greeting {
+  max-width: 980px;
+  margin: 10px auto 0;
+  font-size: 15px;
+  opacity: 0.94;
+}
+
+/* Tabs Navigation */
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  max-width: 980px;
+  margin: 14px auto 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  position: sticky;
+  top: 8px;
+  z-index: 110;
+  box-shadow: var(--shadow-sm);
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 10px;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 62px;
+}
+
+.tab-icon {
+  font-size: 20px;
+}
+
+.tab:hover {
+  transform: translateY(-1px);
+  background: var(--bg-elevated);
+}
+
+.tab.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #4ecdc4 0%, #2ea39b 100%);
+  box-shadow: 0 8px 16px rgba(78, 205, 196, 0.28);
+}
+
+/* Content */
+.content {
+  max-width: 980px;
+  margin: 12px auto 0;
+  background: transparent;
+  min-height: calc(100vh - 220px);
+}
+
+/* Loading Screen */
+.loading-screen,
+.error-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f0f0f0;
+  border-top-color: #4ECDC4;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.error-screen h2 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.error-screen p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+/* Dark Theme Support */
+.dark-theme {
+  background: #1a1a1a;
+  color: #f0f0f0;
+}
+
+.dark-theme .app-header {
+  background: linear-gradient(135deg, #2c3f56 0%, #1d2a3a 100%);
+}
+
+.dark-theme .tabs {
+  background: rgba(27, 36, 48, 0.92);
+  border-color: #3b4a5e;
+}
+
+.dark-theme .tab {
+  color: #a0aec0;
+}
+
+.dark-theme .tab.active {
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(78, 205, 196, 0.22);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-header {
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+  }
+
+  .app-header-top {
+    align-items: flex-start;
+  }
+
+  .theme-toggle {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-header h1 {
+    font-size: 21px;
+  }
+
+  .theme-toggle span:last-child {
+    display: none;
+  }
+
+  .tab {
+    font-size: 12px;
+    padding: 12px 8px;
+  }
+
+  .tab-icon {
+    font-size: 18px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content > * {
+  animation: fadeIn 0.3s ease-out;
+}

@@ -1,0 +1,230 @@
+.wheel-container {
+  padding: 20px 16px 28px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.wheel-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.wheel-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 23px;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
+.wheel-svg {
+  display: block;
+  margin: 0 auto;
+  cursor: pointer;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.08));
+  transition: transform 0.25s ease;
+}
+
+.wheel-svg:hover {
+  transform: translateY(-1px);
+}
+
+.sphere-point {
+  cursor: pointer;
+  transition: r 0.2s;
+}
+
+.sphere-point:hover {
+  r: 8;
+}
+
+.spheres-legend {
+  margin-top: 30px;
+  display: grid;
+  gap: 10px;
+}
+
+.sphere-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.sphere-item:hover {
+  transform: translateX(3px);
+  box-shadow: var(--shadow-md);
+}
+
+.sphere-icon {
+  font-size: 24px;
+  margin-right: 12px;
+}
+
+.sphere-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sphere-value {
+  font-weight: 600;
+  color: #4ECDC4;
+  font-size: 16px;
+}
+
+/* Модальное окно */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--bg-primary);
+  border-radius: 18px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: var(--text-primary);
+}
+
+.modal-content p {
+  margin: 0 0 20px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.rating-input {
+  margin: 30px 0;
+  text-align: center;
+}
+
+.rating-slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  -webkit-appearance: none;
+  margin-bottom: 20px;
+}
+
+.rating-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  border: 3px solid #4ECDC4;
+}
+
+.rating-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  border: 3px solid #4ECDC4;
+}
+
+.rating-value {
+  font-size: 48px;
+  font-weight: 700;
+  color: #4ECDC4;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-cancel,
+.btn-save {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+
+.btn-cancel:hover {
+  background: var(--border-color);
+}
+
+.btn-save {
+  background: #4ECDC4;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #3db8af;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.4);
+}
+
+body.dark-theme .modal-overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+body.dark-theme .wheel-svg {
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.28));
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+  .wheel-container {
+    padding: 15px;
+  }
+
+  .wheel-svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .sphere-item {
+    padding: 10px 12px;
+  }
+
+  .sphere-icon {
+    font-size: 20px;
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+}
