@@ -1,0 +1,32 @@
+.login-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-container h1 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.login-container p {
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.telegram-login-container {
+  display: flex;
+  justify-content: center;
+}

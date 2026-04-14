@@ -67,6 +67,29 @@ const useStore = create((set, get) => ({
     }
   },
 
+  // Добавить в useStore
+  authenticateWithOAuth: async (telegramUser) => {
+    try {
+      const authData = await authenticateWithTelegramOAuth(telegramUser);
+
+      if (authData?.user) {
+        set({ user: authData.user, isAuthenticated: true });
+
+        // Загрузка данных пользователя
+        await Promise.all([
+          get().loadCurrentRatings(),
+          get().loadRatingsHistory(),
+          get().loadGoals(),
+        ]);
+      }
+
+      return authData;
+    } catch (error) {
+      console.error("OAuth auth error:", error);
+      throw error;
+    }
+  },
+
   // Загрузка текущих оценок
   loadCurrentRatings: async () => {
     try {

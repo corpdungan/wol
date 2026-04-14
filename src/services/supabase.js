@@ -49,3 +49,38 @@ export const authenticateWithTelegram = async (initData) => {
     throw error;
   }
 };
+
+export const authenticateWithTelegramOAuth = async (telegramUser) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: `tg_${telegramUser.id}@telegram.user`,
+      password: telegramUser.hash || telegramUser.id.toString()
+    });
+
+    if (error && error.message.includes('Invalid login credentials')) {
+      // Создаем нового пользователя
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: `tg_${telegramUser.id}@telegram.user`,
+        password: telegramUser.hash || telegramUser.id.toString(),
+        options: {
+          data: {
+            telegram_id: telegramUser.id,
+            first_name: telegramUser.first_name,
+            last_name: telegramUser.last_name,
+            username: telegramUser.username,
+            auth_date: telegramUser.auth_date
+          }
+        }
+      });
+
+      if (signUpError) throw signUpError;
+      return signUpData;
+    }
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('OAuth auth error:', error);
+    throw error;
+  }
+};
