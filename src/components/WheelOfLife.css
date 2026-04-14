@@ -21,6 +21,72 @@
   margin: 0;
 }
 
+.weak-sphere-card {
+  background: var(--bg-primary);
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin: 0 auto 20px;
+  max-width: 520px;
+  box-shadow: var(--shadow-sm);
+}
+
+.weak-sphere-label {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.weak-sphere-main {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.12), rgba(78, 205, 196, 0.12));
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.weak-sphere-main:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.weak-sphere-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.weak-sphere-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.weak-sphere-name {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.weak-sphere-value {
+  color: #ff6b6b;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.weak-sphere-note,
+.weak-sphere-empty {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
 .wheel-svg {
   display: block;
   margin: 0 auto;
@@ -34,12 +100,17 @@
 }
 
 .sphere-point {
-  cursor: pointer;
-  transition: r 0.2s;
+  cursor: grab;
+  touch-action: none;
+  transition: r 0.12s ease;
 }
 
 .sphere-point:hover {
   r: 8;
+}
+
+.sphere-point.dragging {
+  cursor: grabbing;
 }
 
 .spheres-legend {
@@ -214,6 +285,14 @@ body.dark-theme .wheel-svg {
   .wheel-svg {
     width: 100%;
     height: auto;
+  }
+
+  .weak-sphere-card {
+    padding: 12px;
+  }
+
+  .weak-sphere-name {
+    font-size: 15px;
   }
 
   .sphere-item {
