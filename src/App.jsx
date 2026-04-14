@@ -48,8 +48,10 @@ function App() {
         window.matchMedia &&
         window.matchMedia("(prefers-color-scheme: dark)").matches;
 
-      // Определяем среду
-      const inTelegram = window.Telegram && window.Telegram.WebApp;
+      // Opredeliaem sredu - proveriaem ne tol'ko nalichie WebApp, no i dannye pol'zovatelia
+      const hasTelegramWebApp = window.Telegram && window.Telegram.WebApp;
+      const hasTelegramData = hasTelegramWebApp && window.Telegram.WebApp.initDataUnsafe?.user;
+      const inTelegram = hasTelegramWebApp && hasTelegramData;
       setIsTelegramEnvironment(inTelegram);
 
       let telegramTheme = null;
@@ -119,19 +121,8 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    // Показываем экран входа только для браузерной версии
-    if (!isTelegramEnvironment) {
-      return <LoginScreen onLogin={handleTelegramOAuthLogin} />;
-    }
-
-    // Для Telegram показываем ошибку
-    return (
-      <div className="error-screen">
-        <div className="error-icon">⚠️</div>
-        <h2>Ошибка авторизации</h2>
-        <p>Не удалось войти в приложение</p>
-      </div>
-    );
+    // Pokazyvaem ekran vhoga dlia vsekh neavtorizovannykh pol'zovatelei
+    return <LoginScreen onLogin={handleTelegramOAuthLogin} />;
   }
 
   return (
