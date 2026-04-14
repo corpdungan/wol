@@ -1,5 +1,6 @@
 import React from 'react';
 import TelegramLogin from './TelegramLogin';
+import './LoginScreen.css';
 
 const LoginScreen = ({ onLogin }) => {
   return (

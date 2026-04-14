@@ -77,16 +77,20 @@ function App() {
 
           if (telegramAuthData) {
             // Обработка OAuth редиректа
-            const userData = JSON.parse(decodeURIComponent(telegramAuthData));
-            await handleTelegramOAuthLogin(userData);
-            // Очистка URL от параметров
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname,
-            );
+            try {
+              const userData = JSON.parse(decodeURIComponent(telegramAuthData));
+              await handleTelegramOAuthLogin(userData);
+              // Очистка URL от параметров
+              window.history.replaceState(
+                {},
+                document.title,
+                window.location.pathname,
+              );
+            } catch (error) {
+              console.error("Error parsing telegram auth data:", error);
+            }
           }
-          // Если нет данных - покажем экран входа
+          // Если нет данных - покажем экран входа (это уже обрабатывается в рендере)
         }
       } catch (error) {
         console.error("Initialization error:", error);
