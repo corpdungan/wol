@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { supabase } from "../services/supabase";
+import { supabase, authenticateWithTelegram } from "../services/supabase";
 
 const useStore = create((set, get) => ({
   // Состояние пользователя
@@ -44,7 +44,6 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // Аутентификация через Anonymous Auth (избегает rate limits)
   authenticateUser: async (initData) => {
     try {
       // Проверяем есть ли уже сессия
@@ -57,23 +56,11 @@ const useStore = create((set, get) => ({
         return { user: session.user };
       }
 
-      // Используем Anonymous Auth для избежания rate limits
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "telegram",
-        options: {
-          redirectTo: window.location.origin,
-          queryParams: {
-            ...initData,
-          },
-        },
-      });
-      if (error) {
-        console.error("Anonymous auth error:", error);
-        throw error;
-      }
+      // Используем правильную аутентификацию через Telegram
+      const authData = await authenticateWithTelegram(initData);
 
-      console.log("Anonymous auth successful");
-      return data;
+      console.log("Telegram auth successful");
+      return authData;
     } catch (error) {
       console.error("Auth error:", error);
       throw error;
