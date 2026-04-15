@@ -245,6 +245,105 @@
   color: #4ECDC4;
 }
 
+.btn-analyze-sphere {
+  width: 100%;
+  margin-top: 4px;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-analyze-sphere:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn-analyze-sphere:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.sphere-analysis-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.sphere-analysis-loading p {
+  margin: 0;
+}
+
+.sphere-analysis-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+  border-top-color: #667eea;
+  animation: sphereSpin 0.8s linear infinite;
+}
+
+.sphere-analysis-card {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid color-mix(in srgb, var(--border-color) 72%, transparent);
+}
+
+.analysis-summary {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.analysis-state {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.analysis-list-block {
+  margin-bottom: 10px;
+}
+
+.analysis-list-block h4 {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.analysis-list-block ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+}
+
+.analysis-list-block li {
+  margin-bottom: 4px;
+  line-height: 1.45;
+  font-size: 13px;
+}
+
+.analysis-focus-goal {
+  margin: 2px 0 0;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #4ecdc4 16%, transparent);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .modal-buttons {
   display: flex;
   gap: 12px;
@@ -289,6 +388,16 @@ body.dark-theme .modal-overlay {
 
 body.dark-theme .wheel-svg {
   filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.28));
+}
+
+body.dark-theme .analysis-focus-goal {
+  background: color-mix(in srgb, #4ecdc4 24%, transparent);
+}
+
+@keyframes sphereSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Адаптивность */
