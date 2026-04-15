@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LIFE_SPHERES } from '../types/spheres';
 import useStore from '../store/useStore';
 import './WheelOfLife.css';
@@ -12,8 +12,11 @@ const WheelOfLife = ({ theme = 'light' }) => {
   const svgRef = useRef(null);
   const dragStateRef = useRef(null);
   const dragPreviewRef = useRef(null);
+  const holdStateRef = useRef(null);
+  const holdTimerRef = useRef(null);
   const currentRatingsRef = useRef(currentRatings);
   const suppressClickRef = useRef(null);
+  const saveRatingRef = useRef(saveRating);
   const gridStroke = theme === 'dark' ? '#475569' : '#e0e0e0';
   const centerStroke = theme === 'dark' ? '#e6edf3' : '#333';
   const pointStroke = theme === 'dark' ? '#0f172a' : '#ffffff';
@@ -21,10 +24,16 @@ const WheelOfLife = ({ theme = 'light' }) => {
   const centerX = 200;
   const centerY = 200;
   const maxRadius = 150;
+  const HOLD_DELAY_MS = 260;
+  const HOLD_MOVE_THRESHOLD = 8;
 
   useEffect(() => {
     currentRatingsRef.current = currentRatings;
   }, [currentRatings]);
+
+  useEffect(() => {
+    saveRatingRef.current = saveRating;
+  }, [saveRating]);
 
   const getSphereValue = (sphereId) => {
     if (dragPreview?.sphereId === sphereId) {
@@ -34,7 +43,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
     return Number(currentRatings[sphereId] ?? 0);
   };
 
-  const getPointerPositionInSvg = (event) => {
+  const getPointerPositionInSvg = useCallback((event) => {
     if (!svgRef.current) {
       return null;
     }
@@ -45,9 +54,9 @@ const WheelOfLife = ({ theme = 'light' }) => {
       x: ((event.clientX - rect.left) / rect.width) * 400,
       y: ((event.clientY - rect.top) / rect.height) * 400
     };
-  };
+  }, []);
 
-  const getValueFromPointer = (event, sphereId) => {
+  const getValueFromPointer = useCallback((event, sphereId) => {
     const pointer = getPointerPositionInSvg(event);
     const fallbackValue = Number(currentRatingsRef.current[sphereId] ?? 0);
 
@@ -70,6 +79,13 @@ const WheelOfLife = ({ theme = 'light' }) => {
     const nextValue = Math.round((clampedRadius / maxRadius) * 10);
 
     return Math.min(10, Math.max(1, nextValue));
+  }, [centerX, centerY, getPointerPositionInSvg, maxRadius]);
+
+  const clearHoldTimer = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
   };
 
   const handlePointPointerDown = (event, sphere) => {
@@ -79,33 +95,66 @@ const WheelOfLife = ({ theme = 'light' }) => {
 
     event.preventDefault();
     event.stopPropagation();
+    clearHoldTimer();
 
-    const initialValue = Number(currentRatingsRef.current[sphere.id] ?? 0);
-    const activeDrag = {
+    const holdState = {
       sphereId: sphere.id,
       pointerId: event.pointerId,
-      moved: false
+      activated: false,
+      startX: event.clientX,
+      startY: event.clientY
     };
-
-    dragStateRef.current = activeDrag;
-    setDragState(activeDrag);
-
-    const preview = {
-      sphereId: sphere.id,
-      value: initialValue
-    };
-    dragPreviewRef.current = preview;
-    setDragPreview(preview);
+    holdStateRef.current = holdState;
 
     event.currentTarget.setPointerCapture?.(event.pointerId);
+
+    holdTimerRef.current = setTimeout(() => {
+      const pendingHold = holdStateRef.current;
+      if (!pendingHold || pendingHold.pointerId !== event.pointerId || pendingHold.sphereId !== sphere.id) {
+        return;
+      }
+
+      const initialValue = Number(currentRatingsRef.current[sphere.id] ?? 0);
+      const activeDrag = {
+        sphereId: sphere.id,
+        pointerId: event.pointerId,
+        moved: false
+      };
+
+      holdStateRef.current = { ...pendingHold, activated: true };
+      dragStateRef.current = activeDrag;
+      setDragState(activeDrag);
+
+      const preview = {
+        sphereId: sphere.id,
+        value: initialValue
+      };
+      dragPreviewRef.current = preview;
+      setDragPreview(preview);
+
+      // После long-press не открываем модалку кликом при отпускании.
+      suppressClickRef.current = sphere.id;
+      window.setTimeout(() => {
+        if (suppressClickRef.current === sphere.id) {
+          suppressClickRef.current = null;
+        }
+      }, 300);
+      holdTimerRef.current = null;
+    }, HOLD_DELAY_MS);
   };
 
   useEffect(() => {
-    if (!dragState) {
-      return undefined;
-    }
-
     const handlePointerMove = (event) => {
+      const holdState = holdStateRef.current;
+      if (holdState && holdState.pointerId === event.pointerId && !holdState.activated) {
+        const distance = Math.hypot(event.clientX - holdState.startX, event.clientY - holdState.startY);
+        if (distance > HOLD_MOVE_THRESHOLD) {
+          clearHoldTimer();
+          holdStateRef.current = null;
+        }
+        return;
+      }
+
       const activeDrag = dragStateRef.current;
       if (!activeDrag || event.pointerId !== activeDrag.pointerId) {
         return;
@@ -133,32 +182,36 @@ const WheelOfLife = ({ theme = 'light' }) => {
     };
 
     const finishDrag = async (event) => {
+      const holdState = holdStateRef.current;
+      if (holdState && holdState.pointerId === event.pointerId && !holdState.activated) {
+        clearHoldTimer();
+        holdStateRef.current = null;
+        return;
+      }
+
       const activeDrag = dragStateRef.current;
       if (!activeDrag || event.pointerId !== activeDrag.pointerId) {
         return;
       }
 
-      const { sphereId, moved } = activeDrag;
+      const { sphereId } = activeDrag;
       const finalValue = dragPreviewRef.current?.sphereId === sphereId
         ? dragPreviewRef.current.value
         : Number(currentRatingsRef.current[sphereId] ?? 0);
       const currentValue = Number(currentRatingsRef.current[sphereId] || 0);
 
-      if (moved) {
-        suppressClickRef.current = sphereId;
-      }
-
       setDragState(null);
       setDragPreview(null);
       dragStateRef.current = null;
       dragPreviewRef.current = null;
+      holdStateRef.current = null;
 
       if (finalValue === currentValue || finalValue < 1) {
         return;
       }
 
       try {
-        await saveRating(sphereId, finalValue);
+        await saveRatingRef.current(sphereId, finalValue);
       } catch (error) {
         alert('Ошибка при сохранении оценки');
       }
@@ -172,8 +225,9 @@ const WheelOfLife = ({ theme = 'light' }) => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', finishDrag);
       window.removeEventListener('pointercancel', finishDrag);
+      clearHoldTimer();
     };
-  }, [dragState, saveRating]);
+  }, [HOLD_MOVE_THRESHOLD, getValueFromPointer]);
 
   const weakestSphereInfo = useMemo(() => {
     const ratedSpheres = LIFE_SPHERES
@@ -264,10 +318,14 @@ const WheelOfLife = ({ theme = 'light' }) => {
   };
 
   return (
-    <div className="wheel-container">
+    <div
+      className="wheel-container"
+      onContextMenu={(event) => event.preventDefault()}
+      onSelectStart={(event) => event.preventDefault()}
+    >
       <div className="wheel-header">
         <h2>Колесо Жизни</h2>
-        <p className="subtitle">Перетаскивайте точки или нажмите на сферу для точной оценки</p>
+        <p className="subtitle">Зажмите точку и перетащите, либо нажмите на сферу для точной оценки</p>
       </div>
 
       <div className="weak-sphere-card">
