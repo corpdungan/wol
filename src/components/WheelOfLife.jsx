@@ -24,7 +24,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
   const centerX = 200;
   const centerY = 200;
   const maxRadius = 150;
-  const HOLD_DELAY_MS = 260;
+  const HOLD_DELAY_MS = 180;
   const HOLD_MOVE_THRESHOLD = 8;
 
   useEffect(() => {
@@ -321,6 +321,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
     <div
       className="wheel-container"
       onContextMenu={(event) => event.preventDefault()}
+      onContextMenuCapture={(event) => event.preventDefault()}
       onSelectStart={(event) => event.preventDefault()}
     >
       <div className="wheel-header">
