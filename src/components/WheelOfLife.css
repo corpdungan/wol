@@ -2,6 +2,10 @@
   padding: 20px 16px 28px;
   max-width: 600px;
   margin: 0 auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .wheel-header {
@@ -93,6 +97,9 @@
   cursor: pointer;
   filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.08));
   transition: transform 0.25s ease;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .wheel-svg:hover {
