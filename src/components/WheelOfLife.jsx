@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { LIFE_SPHERES } from '../types/spheres';
 import useStore from '../store/useStore';
 import './WheelOfLife.css';
@@ -7,6 +7,13 @@ const WheelOfLife = ({ theme = 'light' }) => {
   const { currentRatings, saveRating } = useStore();
   const [selectedSphere, setSelectedSphere] = useState(null);
   const [editValue, setEditValue] = useState(5);
+  const [dragState, setDragState] = useState(null);
+  const [dragPreview, setDragPreview] = useState(null);
+  const svgRef = useRef(null);
+  const dragStateRef = useRef(null);
+  const dragPreviewRef = useRef(null);
+  const currentRatingsRef = useRef(currentRatings);
+  const suppressClickRef = useRef(null);
   const gridStroke = theme === 'dark' ? '#475569' : '#e0e0e0';
   const centerStroke = theme === 'dark' ? '#e6edf3' : '#333';
   const pointStroke = theme === 'dark' ? '#0f172a' : '#ffffff';
@@ -15,12 +22,189 @@ const WheelOfLife = ({ theme = 'light' }) => {
   const centerY = 200;
   const maxRadius = 150;
 
+  useEffect(() => {
+    currentRatingsRef.current = currentRatings;
+  }, [currentRatings]);
+
+  const getSphereValue = (sphereId) => {
+    if (dragPreview?.sphereId === sphereId) {
+      return dragPreview.value;
+    }
+
+    return Number(currentRatings[sphereId] ?? 0);
+  };
+
+  const getPointerPositionInSvg = (event) => {
+    if (!svgRef.current) {
+      return null;
+    }
+
+    const rect = svgRef.current.getBoundingClientRect();
+
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * 400,
+      y: ((event.clientY - rect.top) / rect.height) * 400
+    };
+  };
+
+  const getValueFromPointer = (event, sphereId) => {
+    const pointer = getPointerPositionInSvg(event);
+    const fallbackValue = Number(currentRatingsRef.current[sphereId] ?? 0);
+
+    if (!pointer) {
+      return fallbackValue;
+    }
+
+    const sphereIndex = LIFE_SPHERES.findIndex((sphere) => sphere.id === sphereId);
+    if (sphereIndex === -1) {
+      return fallbackValue;
+    }
+
+    const angle = (sphereIndex * 360 / LIFE_SPHERES.length - 90) * Math.PI / 180;
+    const axisX = Math.cos(angle);
+    const axisY = Math.sin(angle);
+    const dx = pointer.x - centerX;
+    const dy = pointer.y - centerY;
+    const projection = dx * axisX + dy * axisY;
+    const clampedRadius = Math.min(maxRadius, Math.max(0, projection));
+    const nextValue = Math.round((clampedRadius / maxRadius) * 10);
+
+    return Math.min(10, Math.max(1, nextValue));
+  };
+
+  const handlePointPointerDown = (event, sphere) => {
+    if (typeof event.button === 'number' && event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const initialValue = Number(currentRatingsRef.current[sphere.id] ?? 0);
+    const activeDrag = {
+      sphereId: sphere.id,
+      pointerId: event.pointerId,
+      moved: false
+    };
+
+    dragStateRef.current = activeDrag;
+    setDragState(activeDrag);
+
+    const preview = {
+      sphereId: sphere.id,
+      value: initialValue
+    };
+    dragPreviewRef.current = preview;
+    setDragPreview(preview);
+
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  useEffect(() => {
+    if (!dragState) {
+      return undefined;
+    }
+
+    const handlePointerMove = (event) => {
+      const activeDrag = dragStateRef.current;
+      if (!activeDrag || event.pointerId !== activeDrag.pointerId) {
+        return;
+      }
+
+      const nextValue = getValueFromPointer(event, activeDrag.sphereId);
+
+      setDragPreview((previousPreview) => {
+        const previousValue = previousPreview?.sphereId === activeDrag.sphereId
+          ? previousPreview.value
+          : Number(currentRatingsRef.current[activeDrag.sphereId] ?? 0);
+
+        if (previousValue === nextValue) {
+          return previousPreview;
+        }
+
+        if (!activeDrag.moved) {
+          dragStateRef.current = { ...activeDrag, moved: true };
+        }
+
+        const nextPreview = { sphereId: activeDrag.sphereId, value: nextValue };
+        dragPreviewRef.current = nextPreview;
+        return nextPreview;
+      });
+    };
+
+    const finishDrag = async (event) => {
+      const activeDrag = dragStateRef.current;
+      if (!activeDrag || event.pointerId !== activeDrag.pointerId) {
+        return;
+      }
+
+      const { sphereId, moved } = activeDrag;
+      const finalValue = dragPreviewRef.current?.sphereId === sphereId
+        ? dragPreviewRef.current.value
+        : Number(currentRatingsRef.current[sphereId] ?? 0);
+      const currentValue = Number(currentRatingsRef.current[sphereId] || 0);
+
+      if (moved) {
+        suppressClickRef.current = sphereId;
+      }
+
+      setDragState(null);
+      setDragPreview(null);
+      dragStateRef.current = null;
+      dragPreviewRef.current = null;
+
+      if (finalValue === currentValue || finalValue < 1) {
+        return;
+      }
+
+      try {
+        await saveRating(sphereId, finalValue);
+      } catch (error) {
+        alert('Ошибка при сохранении оценки');
+      }
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', finishDrag);
+    window.addEventListener('pointercancel', finishDrag);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', finishDrag);
+      window.removeEventListener('pointercancel', finishDrag);
+    };
+  }, [dragState, saveRating]);
+
+  const weakestSphereInfo = useMemo(() => {
+    const ratedSpheres = LIFE_SPHERES
+      .map((sphere) => ({
+        ...sphere,
+        value: dragPreview?.sphereId === sphere.id
+          ? dragPreview.value
+          : Number(currentRatings[sphere.id] ?? 0)
+      }))
+      .filter((sphere) => sphere.value > 0);
+
+    if (ratedSpheres.length === 0) {
+      return null;
+    }
+
+    const minValue = Math.min(...ratedSpheres.map((sphere) => sphere.value));
+    const weakestSpheres = ratedSpheres.filter((sphere) => sphere.value === minValue);
+
+    return {
+      sphere: weakestSpheres[0],
+      value: minValue,
+      tiedCount: weakestSpheres.length - 1
+    };
+  }, [currentRatings, dragPreview]);
+
   // Генерация точек для визуализации колеса
   const generateWheelPath = () => {
-    const points = LIFE_SPHERES.map((sphere, index) => {
-      const angle = (index * 360 / LIFE_SPHERES.length - 90) * Math.PI / 180;
-      const value = currentRatings[sphere.id] || 0;
-      const radius = (value / 10) * maxRadius;
+      const points = LIFE_SPHERES.map((sphere, index) => {
+        const angle = (index * 360 / LIFE_SPHERES.length - 90) * Math.PI / 180;
+        const value = getSphereValue(sphere.id);
+        const radius = (value / 10) * maxRadius;
       
       return {
         x: centerX + radius * Math.cos(angle),
@@ -59,8 +243,13 @@ const WheelOfLife = ({ theme = 'light' }) => {
   };
 
   const handleSphereClick = (sphere) => {
+    if (suppressClickRef.current === sphere.id) {
+      suppressClickRef.current = null;
+      return;
+    }
+
     setSelectedSphere(sphere);
-    setEditValue(currentRatings[sphere.id] || 5);
+    setEditValue(getSphereValue(sphere.id) || 5);
   };
 
   const handleSaveRating = async () => {
@@ -78,10 +267,43 @@ const WheelOfLife = ({ theme = 'light' }) => {
     <div className="wheel-container">
       <div className="wheel-header">
         <h2>Колесо Жизни</h2>
-        <p className="subtitle">Оцените каждую сферу от 1 до 10</p>
+        <p className="subtitle">Перетаскивайте точки или нажмите на сферу для точной оценки</p>
       </div>
 
-      <svg width="400" height="400" className="wheel-svg">
+      <div className="weak-sphere-card">
+        {weakestSphereInfo ? (
+          <>
+            <p className="weak-sphere-label">Слабая сфера сейчас</p>
+            <button
+              type="button"
+              className="weak-sphere-main"
+              onClick={() => handleSphereClick(weakestSphereInfo.sphere)}
+            >
+              <span className="weak-sphere-icon">{weakestSphereInfo.sphere.icon}</span>
+              <span className="weak-sphere-meta">
+                <span className="weak-sphere-name">{weakestSphereInfo.sphere.name}</span>
+                <span className="weak-sphere-value">
+                  {weakestSphereInfo.value}/10
+                </span>
+              </span>
+            </button>
+            {weakestSphereInfo.tiedCount > 0 && (
+              <p className="weak-sphere-note">
+                Еще {weakestSphereInfo.tiedCount} сфер(ы) на этом же уровне.
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="weak-sphere-label">Слабая сфера сейчас</p>
+            <p className="weak-sphere-empty">
+              Поставьте оценку хотя бы одной сфере, и здесь появится результат.
+            </p>
+          </>
+        )}
+      </div>
+
+      <svg ref={svgRef} width="400" height="400" viewBox="0 0 400 400" className="wheel-svg">
         {/* Сетка уровней */}
         {generateGridLines().map(({ level, pathData }) => (
           <path
@@ -123,21 +345,23 @@ const WheelOfLife = ({ theme = 'light' }) => {
         {/* Точки на каждой сфере */}
         {LIFE_SPHERES.map((sphere, index) => {
           const angle = (index * 360 / LIFE_SPHERES.length - 90) * Math.PI / 180;
-          const value = currentRatings[sphere.id] || 0;
+          const value = getSphereValue(sphere.id);
           const radius = (value / 10) * maxRadius;
           const x = centerX + radius * Math.cos(angle);
           const y = centerY + radius * Math.sin(angle);
+          const isDraggingSphere = dragState?.sphereId === sphere.id;
 
           return (
             <circle
               key={sphere.id}
               cx={x}
               cy={y}
-              r="6"
+              r={isDraggingSphere ? 8 : 6}
               fill={sphere.color}
               stroke={pointStroke}
               strokeWidth="2"
-              className="sphere-point"
+              className={`sphere-point ${isDraggingSphere ? 'dragging' : ''}`}
+              onPointerDown={(event) => handlePointPointerDown(event, sphere)}
               onClick={() => handleSphereClick(sphere)}
             />
           );
@@ -159,7 +383,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
             <span className="sphere-icon">{sphere.icon}</span>
             <span className="sphere-name">{sphere.name}</span>
             <span className="sphere-value">
-              {currentRatings[sphere.id] || 0}/10
+              {getSphereValue(sphere.id) || 0}/10
             </span>
           </div>
         ))}
@@ -180,7 +404,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
                 min="1"
                 max="10"
                 value={editValue}
-                onChange={e => setEditValue(parseInt(e.target.value))}
+                onChange={e => setEditValue(parseInt(e.target.value, 10))}
                 className="rating-slider"
                 style={{ background: selectedSphere.color }}
               />
