@@ -1,12 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LIFE_SPHERES } from '../types/spheres';
 import useStore from '../store/useStore';
+import { aiService } from '../services/puterJsService';
 import './WheelOfLife.css';
 
 const WheelOfLife = ({ theme = 'light' }) => {
-  const { currentRatings, saveRating } = useStore();
+  const { currentRatings, saveRating, ratingsHistory, goals } = useStore();
   const [selectedSphere, setSelectedSphere] = useState(null);
   const [editValue, setEditValue] = useState(5);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [sphereAnalysis, setSphereAnalysis] = useState(null);
   const [dragState, setDragState] = useState(null);
   const [dragPreview, setDragPreview] = useState(null);
   const svgRef = useRef(null);
@@ -15,6 +18,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
   const holdStateRef = useRef(null);
   const holdTimerRef = useRef(null);
   const currentRatingsRef = useRef(currentRatings);
+  const selectedSphereRef = useRef(selectedSphere);
   const suppressClickRef = useRef(null);
   const saveRatingRef = useRef(saveRating);
   const gridStroke = theme === 'dark' ? '#475569' : '#e0e0e0';
@@ -30,6 +34,10 @@ const WheelOfLife = ({ theme = 'light' }) => {
   useEffect(() => {
     currentRatingsRef.current = currentRatings;
   }, [currentRatings]);
+
+  useEffect(() => {
+    selectedSphereRef.current = selectedSphere;
+  }, [selectedSphere]);
 
   useEffect(() => {
     saveRatingRef.current = saveRating;
@@ -304,13 +312,55 @@ const WheelOfLife = ({ theme = 'light' }) => {
 
     setSelectedSphere(sphere);
     setEditValue(getSphereValue(sphere.id) || 5);
+    setSphereAnalysis(null);
+    setAnalysisLoading(false);
+  };
+
+  const closeSphereModal = () => {
+    setSelectedSphere(null);
+    setSphereAnalysis(null);
+    setAnalysisLoading(false);
+  };
+
+  const handleAnalyzeSphere = async () => {
+    if (!selectedSphere) {
+      return;
+    }
+
+    const sphereId = selectedSphere.id;
+    const historyForSphere = ratingsHistory
+      .filter((rating) => rating.sphere_id === sphereId)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const goalsForSphere = goals.filter((goal) => goal.sphere_id === sphereId);
+    const currentValue = Number(getSphereValue(sphereId) || editValue || 0);
+
+    setAnalysisLoading(true);
+
+    try {
+      const analysis = await aiService.analyzeSphereInDetail(
+        sphereId,
+        currentValue,
+        historyForSphere,
+        goalsForSphere
+      );
+
+      if (selectedSphereRef.current?.id === sphereId) {
+        setSphereAnalysis(analysis);
+      }
+    } catch (error) {
+      alert('Не удалось получить анализ сферы. Попробуйте позже.');
+    } finally {
+      if (selectedSphereRef.current?.id === sphereId) {
+        setAnalysisLoading(false);
+      }
+    }
   };
 
   const handleSaveRating = async () => {
     if (selectedSphere) {
       try {
         await saveRating(selectedSphere.id, editValue);
-        setSelectedSphere(null);
+        closeSphereModal();
       } catch (error) {
         alert('Ошибка при сохранении оценки');
       }
@@ -450,7 +500,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
 
       {/* Модальное окно редактирования */}
       {selectedSphere && (
-        <div className="modal-overlay" onClick={() => setSelectedSphere(null)}>
+        <div className="modal-overlay" onClick={closeSphereModal}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h3>
               {selectedSphere.icon} {selectedSphere.name}
@@ -470,10 +520,72 @@ const WheelOfLife = ({ theme = 'light' }) => {
               <div className="rating-value">{editValue}</div>
             </div>
 
+            <button
+              type="button"
+              className="btn-analyze-sphere"
+              onClick={handleAnalyzeSphere}
+              disabled={analysisLoading}
+            >
+              {analysisLoading ? 'AI анализирует сферу...' : '🔎 Детальный AI-анализ сферы'}
+            </button>
+
+            {analysisLoading && (
+              <div className="sphere-analysis-loading">
+                <div className="sphere-analysis-spinner"></div>
+                <p>Собираем персональные рекомендации...</p>
+              </div>
+            )}
+
+            {sphereAnalysis && !analysisLoading && (
+              <div className="sphere-analysis-card">
+                <p className="analysis-summary">{sphereAnalysis.summary}</p>
+                <p className="analysis-state">
+                  <strong>Текущее состояние:</strong> {sphereAnalysis.current_state}
+                </p>
+
+                {sphereAnalysis.strengths.length > 0 && (
+                  <div className="analysis-list-block">
+                    <h4>Сильные стороны</h4>
+                    <ul>
+                      {sphereAnalysis.strengths.map((item, index) => (
+                        <li key={`strength-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {sphereAnalysis.growth_points.length > 0 && (
+                  <div className="analysis-list-block">
+                    <h4>Точки роста</h4>
+                    <ul>
+                      {sphereAnalysis.growth_points.map((item, index) => (
+                        <li key={`growth-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {sphereAnalysis.recommendations.length > 0 && (
+                  <div className="analysis-list-block">
+                    <h4>Что делать дальше</h4>
+                    <ul>
+                      {sphereAnalysis.recommendations.map((item, index) => (
+                        <li key={`recommendation-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <p className="analysis-focus-goal">
+                  <strong>Фокус на 7 дней:</strong> {sphereAnalysis.focus_goal}
+                </p>
+              </div>
+            )}
+
             <div className="modal-buttons">
               <button 
                 className="btn-cancel"
-                onClick={() => setSelectedSphere(null)}
+                onClick={closeSphereModal}
               >
                 Отмена
               </button>

@@ -97,6 +97,77 @@ class AIService {
     }
   }
 
+  async analyzeSphereInDetail(sphereId, currentRating, ratingsHistory = [], goals = []) {
+    try {
+      const available = await this.isAvailable();
+      if (!available) {
+        throw new Error('AI сервис недоступен');
+      }
+
+      const sphereNames = {
+        health: 'Здоровье',
+        career: 'Карьера',
+        finance: 'Финансы',
+        relationships: 'Отношения',
+        growth: 'Личностный рост',
+        fun: 'Развлечения',
+        environment: 'Окружение',
+        spirituality: 'Духовность'
+      };
+
+      const sphereName = sphereNames[sphereId] || sphereId;
+      const latestRatings = ratingsHistory
+        .slice(-10)
+        .map((item) => ({ value: item.value, date: item.created_at }));
+      const activeGoals = goals
+        .filter((goal) => goal.status !== 'completed')
+        .map((goal) => ({ title: goal.title, deadline: goal.deadline }));
+
+      const prompt = `Сделай детальный анализ одной сферы жизни пользователя.
+
+Сфера: "${sphereName}".
+Текущая оценка: ${currentRating}/10.
+История оценок сферы: ${JSON.stringify(latestRatings)}.
+Цели в этой сфере: ${JSON.stringify(activeGoals)}.
+
+Верни ответ СТРОГО в JSON без markdown:
+{
+  "summary": "Краткий вывод (1-2 предложения)",
+  "current_state": "Что сейчас происходит в сфере",
+  "strengths": ["Сильная сторона 1", "Сильная сторона 2"],
+  "growth_points": ["Зона роста 1", "Зона роста 2"],
+  "recommendations": ["Практический шаг 1", "Практический шаг 2", "Практический шаг 3"],
+  "focus_goal": "Одна конкретная цель на 7 дней"
+}`;
+
+      const response = await window.puter.ai.chat(prompt, {
+        model: 'x-ai/grok-4-1-fast',
+        temperature: 0.35
+      });
+
+      const content = response?.message?.content || '';
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+
+      if (!jsonMatch) {
+        throw new Error('Не удалось распарсить ответ AI');
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      return {
+        summary: parsed.summary || 'Анализ готов, но краткое резюме не найдено.',
+        current_state: parsed.current_state || 'Недостаточно данных для описания текущего состояния.',
+        strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+        growth_points: Array.isArray(parsed.growth_points) ? parsed.growth_points : [],
+        recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+        focus_goal: parsed.focus_goal || 'Выберите один небольшой шаг и выполните его в течение недели.'
+      };
+    } catch (error) {
+      console.error('Sphere analysis error:', error);
+      throw error;
+    }
+  }
+
   async analyzeProgress(ratingsHistory, goals) {
     try {
       const available = await this.isAvailable();
