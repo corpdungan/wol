@@ -9,6 +9,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
   const [editValue, setEditValue] = useState(5);
   const [dragState, setDragState] = useState(null);
   const [dragPreview, setDragPreview] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
   const svgRef = useRef(null);
   const dragStateRef = useRef(null);
   const dragPreviewRef = useRef(null);
@@ -317,6 +318,107 @@ const WheelOfLife = ({ theme = 'light' }) => {
     }
   };
 
+  const generateMarkdownExport = () => {
+    const date = new Date().toLocaleDateString('ru-RU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    let markdown = `# Колесо Жизни\n\n`;
+    markdown += `**Дата экспорта:** ${date}\n\n`;
+    markdown += `## Оценки сфер\n\n`;
+    markdown += `| Сфера | Оценка |\n`;
+    markdown += `|-------|--------|\n`;
+
+    LIFE_SPHERES.forEach(sphere => {
+      const value = currentRatings[sphere.id] || 0;
+      markdown += `| ${sphere.icon} ${sphere.name} | ${value}/10 |\n`;
+    });
+
+    const ratedSpheres = LIFE_SPHERES.filter(s => currentRatings[s.id] > 0);
+    if (ratedSpheres.length > 0) {
+      const avgRating = (ratedSpheres.reduce((sum, s) => sum + (currentRatings[s.id] || 0), 0) / ratedSpheres.length).toFixed(1);
+      markdown += `\n**Средняя оценка:** ${avgRating}/10\n`;
+    }
+    
+    return markdown;
+  };
+
+  const handleDownloadExport = () => {
+    const markdown = generateMarkdownExport();
+    
+    // Проверяем, запущено ли в Telegram Mini App
+    if (window.Telegram && window.Telegram.WebApp) {
+      // В Telegram Mini App создаем data URL и открываем через Telegram API
+      const blob = new Blob([markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      
+      // Используем openLink для открытия файла в браузере
+      window.Telegram.WebApp.openLink(url);
+      
+      URL.revokeObjectURL(url);
+    } else {
+      // Стандартный способ для браузера
+      const blob = new Blob([markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `wheel-of-life-${new Date().toISOString().split('T')[0]}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+    
+    setShowExportModal(false);
+  };
+
+  const handleEmailExport = () => {
+    const markdown = generateMarkdownExport();
+    const subject = encodeURIComponent('Мои оценки Колеса Жизни');
+    const body = encodeURIComponent(markdown);
+    
+    // Проверяем, запущено ли в Telegram Mini App
+    if (window.Telegram && window.Telegram.WebApp) {
+      // В Telegram Mini App используем openLink для mailto
+      window.Telegram.WebApp.openLink(`mailto:?subject=${subject}&body=${body}`);
+    } else {
+      // Стандартный способ для браузера
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }
+    
+    setShowExportModal(false);
+  };
+
+  const handleCopyToClipboard = async () => {
+    const markdown = generateMarkdownExport();
+    
+    try {
+      // Проверяем, запущено ли в Telegram Mini App
+      if (window.Telegram && window.Telegram.WebApp) {
+        // Используем Telegram WebApp API для копирования
+        if (window.Telegram.WebApp.writeText) {
+          await window.Telegram.WebApp.writeText(markdown);
+          window.Telegram.WebApp.showAlert('Данные скопированы в буфер обмена!');
+        } else {
+          // Fallback на стандартный API
+          await navigator.clipboard.writeText(markdown);
+          alert('Данные скопированы в буфер обмена!');
+        }
+      } else {
+        // Стандартный способ для браузера
+        await navigator.clipboard.writeText(markdown);
+        alert('Данные скопированы в буфер обмена!');
+      }
+      
+      setShowExportModal(false);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      alert('Не удалось скопировать данные. Попробуйте другой способ экспорта.');
+    }
+  };
+
   return (
     <div
       className="wheel-container"
@@ -325,7 +427,17 @@ const WheelOfLife = ({ theme = 'light' }) => {
       onSelectStart={(event) => event.preventDefault()}
     >
       <div className="wheel-header">
-        <h2>Колесо Жизни</h2>
+        <div className="wheel-header-top">
+          <h2>Колесо Жизни</h2>
+          <button
+            type="button"
+            className="btn-export"
+            onClick={() => setShowExportModal(true)}
+            title="Экспортировать оценки"
+          >
+            📥 Экспорт
+          </button>
+        </div>
         <p className="subtitle">Зажмите точку и перетащите, либо нажмите на сферу для точной оценки</p>
       </div>
 
@@ -482,6 +594,63 @@ const WheelOfLife = ({ theme = 'light' }) => {
                 onClick={handleSaveRating}
               >
                 Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно экспорта */}
+      {showExportModal && (
+        <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>📥 Экспорт оценок</h3>
+            <p>Выберите способ экспорта ваших оценок</p>
+
+            <div className="export-options">
+              <button
+                type="button"
+                className="export-option-btn"
+                onClick={handleDownloadExport}
+              >
+                <span className="export-option-icon">💾</span>
+                <span className="export-option-text">
+                  <span className="export-option-title">Скачать файл</span>
+                  <span className="export-option-desc">Формат Markdown (.md)</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="export-option-btn"
+                onClick={handleEmailExport}
+              >
+                <span className="export-option-icon">📧</span>
+                <span className="export-option-text">
+                  <span className="export-option-title">Отправить на почту</span>
+                  <span className="export-option-desc">Откроется почтовый клиент</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="export-option-btn"
+                onClick={handleCopyToClipboard}
+              >
+                <span className="export-option-icon">📋</span>
+                <span className="export-option-text">
+                  <span className="export-option-title">Копировать</span>
+                  <span className="export-option-desc">Скопировать в буфер обмена</span>
+                </span>
+              </button>
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowExportModal(false)}
+              >
+                Отмена
               </button>
             </div>
           </div>
