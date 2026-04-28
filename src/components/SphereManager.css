@@ -1,0 +1,453 @@
+.sphere-manager-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sphere-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sphere-manager-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.btn-close:hover {
+  background-color: #f0f0f0;
+}
+
+.sphere-manager-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+@media (min-width: 600px) {
+  .sphere-manager-content {
+    flex-direction: row;
+  }
+}
+
+/* Список сфер */
+.spheres-list-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.spheres-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.spheres-list-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #666;
+}
+
+.btn-add-sphere {
+  background: #4ECDC4;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-add-sphere:hover {
+  background: #3dbdb4;
+}
+
+.spheres-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.sphere-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid;
+  transition: background-color 0.2s;
+}
+
+.sphere-list-item:hover {
+  background: #e9ecef;
+}
+
+.sphere-list-item.editing {
+  background: #e3f2fd;
+  border-left-color: #2196f3 !important;
+}
+
+.sphere-list-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sphere-list-icon {
+  font-size: 1.25rem;
+}
+
+.sphere-list-name {
+  font-size: 0.9375rem;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sphere-list-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-edit-sphere,
+.btn-delete-sphere {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.btn-edit-sphere:hover {
+  background: #e3f2fd;
+}
+
+.btn-delete-sphere:hover {
+  background: #ffebee;
+}
+
+.spheres-empty {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 0.9375rem;
+}
+
+/* Форма */
+.sphere-form-section {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.sphere-form-section h4 {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4ECDC4;
+}
+
+/* Выбор иконки */
+.icon-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.icon-option {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-option:hover {
+  border-color: #4ECDC4;
+  background: #f0f9f8;
+}
+
+.icon-option.selected {
+  border-color: #4ECDC4;
+  background: #e0f7f5;
+}
+
+/* Выбор цвета */
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.color-option {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+  border-color: #ddd;
+}
+
+.color-option.selected {
+  border-color: #333;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
+}
+
+/* Кнопки формы */
+.sphere-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.sphere-form-actions .btn-cancel,
+.sphere-form-actions .btn-save {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  color: #666;
+}
+
+.btn-cancel:hover {
+  background: #e0e0e0;
+}
+
+.btn-save {
+  background: #4ECDC4;
+  border: none;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #3dbdb4;
+}
+
+/* Футер */
+.sphere-manager-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-reset-spheres {
+  background: none;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.btn-reset-spheres:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+/* Модалка подтверждения */
+.confirm-modal {
+  max-width: 300px;
+  text-align: center;
+}
+
+.confirm-modal h4 {
+  margin: 0 0 12px 0;
+  color: #e74c3c;
+}
+
+.confirm-modal p {
+  margin: 8px 0;
+  color: #666;
+  font-size: 0.9375rem;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.confirm-actions .btn-cancel,
+.confirm-actions .btn-confirm-delete {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-confirm-delete {
+  background: #e74c3c;
+  border: none;
+  color: white;
+}
+
+.btn-confirm-delete:hover {
+  background: #c0392b;
+}
+
+/* Dark theme */
+.dark .sphere-manager-header {
+  border-bottom-color: #444;
+}
+
+.dark .sphere-manager-header h3 {
+  color: #e0e0e0;
+}
+
+.dark .btn-close:hover {
+  background-color: #333;
+}
+
+.dark .spheres-list-header h4 {
+  color: #999;
+}
+
+.dark .sphere-list-item {
+  background: #2a2a2a;
+}
+
+.dark .sphere-list-item:hover {
+  background: #333;
+}
+
+.dark .sphere-list-name {
+  color: #e0e0e0;
+}
+
+.dark .sphere-form-section {
+  background: #2a2a2a;
+}
+
+.dark .sphere-form-section h4 {
+  color: #e0e0e0;
+}
+
+.dark .form-group label {
+  color: #999;
+}
+
+.dark .form-input {
+  background: #1a1a1a;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+.dark .form-input:focus {
+  border-color: #4ECDC4;
+}
+
+.dark .icon-option {
+  background: #1a1a1a;
+  border-color: #444;
+}
+
+.dark .icon-option:hover {
+  border-color: #4ECDC4;
+  background: #2a3a39;
+}
+
+.dark .icon-option.selected {
+  border-color: #4ECDC4;
+  background: #1a3331;
+}
+
+.dark .sphere-manager-footer {
+  border-top-color: #444;
+}
+
+.dark .btn-reset-spheres {
+  border-color: #555;
+  color: #999;
+}
+
+.dark .btn-reset-spheres:hover {
+  background: #333;
+}
+
+.dark .spheres-empty {
+  color: #666;
+}

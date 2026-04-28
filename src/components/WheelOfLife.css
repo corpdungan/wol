@@ -20,10 +20,68 @@
   margin-bottom: 30px;
 }
 
+.wheel-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.wheel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-manage-spheres {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-manage-spheres:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+}
+
+.btn-manage-spheres:active {
+  transform: translateY(0);
+}
+
 .wheel-header h2 {
-  margin: 0 0 8px 0;
+  margin: 0;
   font-size: 23px;
   color: var(--text-primary);
+}
+
+.btn-export {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4ECDC4 0%, #44a3a0 100%);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-export:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.4);
+}
+
+.btn-export:active {
+  transform: translateY(0);
 }
 
 .subtitle {
@@ -380,6 +438,55 @@
   background: #3db8af;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(78, 205, 196, 0.4);
+}
+
+.export-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.export-option-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.export-option-btn:hover {
+  border-color: #4ECDC4;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.2);
+}
+
+.export-option-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.export-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.export-option-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.export-option-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 body.dark-theme .modal-overlay {

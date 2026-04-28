@@ -8,7 +8,7 @@ import {
 } from "date-fns";
 import { ru } from "date-fns/locale";
 import useStore from "../store/useStore";
-import { LIFE_SPHERES, getSphereById } from "../types/spheres";
+import { getSphereById } from "../types/spheres";
 import { aiService } from "../services/puterJsService";
 import "./Goals.css";
 
@@ -76,7 +76,7 @@ const sortGoalsByUrgency = (goalsList) =>
   });
 
 const Goals = () => {
-  const { goals, createGoal, updateGoalStatus, deleteGoal, currentRatings } =
+  const { spheres, goals, createGoal, updateGoalStatus, deleteGoal, currentRatings } =
     useStore();
   const [showModal, setShowModal] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
@@ -119,7 +119,7 @@ const Goals = () => {
   const sphereStats = useMemo(() => {
     const stats = {};
 
-    LIFE_SPHERES.forEach((sphere) => {
+    spheres.forEach((sphere) => {
       const sphereGoals = goals.filter((goal) => goal.sphere_id === sphere.id);
       const sphereCompleted = sphereGoals.filter(
         (goal) => goal.status === "completed",
@@ -135,7 +135,7 @@ const Goals = () => {
     });
 
     return stats;
-  }, [goals]);
+  }, [spheres, goals]);
 
   const filteredGoals = useMemo(
     () =>
@@ -295,7 +295,7 @@ const Goals = () => {
     return "В работе";
   };
 
-  const visibleSpheres = LIFE_SPHERES.filter((sphere) => {
+  const visibleSpheres = spheres.filter((sphere) => {
     const goalsInSphere = groupedGoals[sphere.id] || [];
     return showEmptySpheres || goalsInSphere.length > 0;
   });
@@ -601,7 +601,7 @@ const Goals = () => {
                   }
                   className="form-select"
                 >
-                  {LIFE_SPHERES.map((sphere) => (
+                  {spheres.map((sphere) => (
                     <option key={sphere.id} value={sphere.id}>
                       {sphere.icon} {sphere.name}
                     </option>

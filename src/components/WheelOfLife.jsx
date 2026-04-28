@@ -1,17 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LIFE_SPHERES } from '../types/spheres';
 import useStore from '../store/useStore';
 import { aiService } from '../services/puterJsService';
+import SphereManager from './SphereManager';
 import './WheelOfLife.css';
 
 const WheelOfLife = ({ theme = 'light' }) => {
-  const { currentRatings, saveRating, ratingsHistory, goals } = useStore();
+  const { spheres, currentRatings, saveRating, ratingsHistory, goals } = useStore();
   const [selectedSphere, setSelectedSphere] = useState(null);
   const [editValue, setEditValue] = useState(5);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [sphereAnalysis, setSphereAnalysis] = useState(null);
   const [dragState, setDragState] = useState(null);
   const [dragPreview, setDragPreview] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showSphereManager, setShowSphereManager] = useState(false);
   const svgRef = useRef(null);
   const dragStateRef = useRef(null);
   const dragPreviewRef = useRef(null);
@@ -72,12 +74,12 @@ const WheelOfLife = ({ theme = 'light' }) => {
       return fallbackValue;
     }
 
-    const sphereIndex = LIFE_SPHERES.findIndex((sphere) => sphere.id === sphereId);
+    const sphereIndex = spheres.findIndex((sphere) => sphere.id === sphereId);
     if (sphereIndex === -1) {
       return fallbackValue;
     }
 
-    const angle = (sphereIndex * 360 / LIFE_SPHERES.length - 90) * Math.PI / 180;
+    const angle = (sphereIndex * 360 / spheres.length - 90) * Math.PI / 180;
     const axisX = Math.cos(angle);
     const axisY = Math.sin(angle);
     const dx = pointer.x - centerX;
@@ -238,7 +240,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
   }, [HOLD_MOVE_THRESHOLD, getValueFromPointer]);
 
   const weakestSphereInfo = useMemo(() => {
-    const ratedSpheres = LIFE_SPHERES
+    const ratedSpheres = spheres
       .map((sphere) => ({
         ...sphere,
         value: dragPreview?.sphereId === sphere.id
@@ -263,8 +265,8 @@ const WheelOfLife = ({ theme = 'light' }) => {
 
   // Генерация точек для визуализации колеса
   const generateWheelPath = () => {
-      const points = LIFE_SPHERES.map((sphere, index) => {
-        const angle = (index * 360 / LIFE_SPHERES.length - 90) * Math.PI / 180;
+      const points = spheres.map((sphere, index) => {
+        const angle = (index * 360 / spheres.length - 90) * Math.PI / 180;
         const value = getSphereValue(sphere.id);
         const radius = (value / 10) * maxRadius;
       
@@ -286,8 +288,8 @@ const WheelOfLife = ({ theme = 'light' }) => {
   const generateGridLines = () => {
     const levels = [2, 4, 6, 8, 10];
     return levels.map(level => {
-      const points = LIFE_SPHERES.map((sphere, index) => {
-        const angle = (index * 360 / LIFE_SPHERES.length - 90) * Math.PI / 180;
+      const points = spheres.map((sphere, index) => {
+        const angle = (index * 360 / spheres.length - 90) * Math.PI / 180;
         const radius = (level / 10) * maxRadius;
         
         return {
@@ -367,6 +369,55 @@ const WheelOfLife = ({ theme = 'light' }) => {
     }
   };
 
+  const generateMarkdownExport = () => {
+    const date = new Date().toLocaleDateString('ru-RU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    let markdown = `# Колесо Жизни\n\n`;
+    markdown += `**Дата экспорта:** ${date}\n\n`;
+    markdown += `## Оценки сфер\n\n`;
+    markdown += `| Сфера | Оценка |\n`;
+    markdown += `|-------|--------|\n`;
+
+    spheres.forEach(sphere => {
+      const value = currentRatings[sphere.id] || 0;
+      markdown += `| ${sphere.icon} ${sphere.name} | ${value}/10 |\n`;
+    });
+
+    const ratedSpheres = spheres.filter(s => currentRatings[s.id] > 0);
+    if (ratedSpheres.length > 0) {
+      const avgRating = (ratedSpheres.reduce((sum, s) => sum + (currentRatings[s.id] || 0), 0) / ratedSpheres.length).toFixed(1);
+      markdown += `\n**Средняя оценка:** ${avgRating}/10\n`;
+    }
+    
+    return markdown;
+  };
+
+  const handleDownloadExport = () => {
+    const markdown = generateMarkdownExport();
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `wheel-of-life-${new Date().toISOString().split('T')[0]}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setShowExportModal(false);
+  };
+
+  const handleEmailExport = () => {
+    const markdown = generateMarkdownExport();
+    const subject = encodeURIComponent('Мои оценки Колеса Жизни');
+    const body = encodeURIComponent(markdown);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    setShowExportModal(false);
+  };
+
   return (
     <div
       className="wheel-container"
@@ -375,7 +426,27 @@ const WheelOfLife = ({ theme = 'light' }) => {
       onSelectStart={(event) => event.preventDefault()}
     >
       <div className="wheel-header">
-        <h2>Колесо Жизни</h2>
+        <div className="wheel-header-top">
+          <h2>Колесо Жизни</h2>
+          <div className="wheel-header-actions">
+            <button
+              type="button"
+              className="btn-manage-spheres"
+              onClick={() => setShowSphereManager(true)}
+              title="Управление сферами"
+            >
+              ⚙️ Сферы
+            </button>
+            <button
+              type="button"
+              className="btn-export"
+              onClick={() => setShowExportModal(true)}
+              title="Экспортировать оценки"
+            >
+              📥 Экспорт
+            </button>
+          </div>
+        </div>
         <p className="subtitle">Зажмите точку и перетащите, либо нажмите на сферу для точной оценки</p>
       </div>
 
@@ -425,8 +496,8 @@ const WheelOfLife = ({ theme = 'light' }) => {
         ))}
 
         {/* Линии от центра к краям */}
-        {LIFE_SPHERES.map((sphere, index) => {
-          const angle = (index * 360 / LIFE_SPHERES.length - 90) * Math.PI / 180;
+        {spheres.map((sphere, index) => {
+          const angle = (index * 360 / spheres.length - 90) * Math.PI / 180;
           const endX = centerX + maxRadius * Math.cos(angle);
           const endY = centerY + maxRadius * Math.sin(angle);
           
@@ -452,8 +523,8 @@ const WheelOfLife = ({ theme = 'light' }) => {
         />
 
         {/* Точки на каждой сфере */}
-        {LIFE_SPHERES.map((sphere, index) => {
-          const angle = (index * 360 / LIFE_SPHERES.length - 90) * Math.PI / 180;
+        {spheres.map((sphere, index) => {
+          const angle = (index * 360 / spheres.length - 90) * Math.PI / 180;
           const value = getSphereValue(sphere.id);
           const radius = (value / 10) * maxRadius;
           const x = centerX + radius * Math.cos(angle);
@@ -482,7 +553,7 @@ const WheelOfLife = ({ theme = 'light' }) => {
 
       {/* Легенда со сферами */}
       <div className="spheres-legend">
-        {LIFE_SPHERES.map(sphere => (
+        {spheres.map(sphere => (
           <div
             key={sphere.id}
             className="sphere-item"
@@ -598,6 +669,56 @@ const WheelOfLife = ({ theme = 'light' }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Модальное окно экспорта */}
+      {showExportModal && (
+        <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>📥 Экспорт оценок</h3>
+            <p>Выберите способ экспорта ваших оценок</p>
+
+            <div className="export-options">
+              <button
+                type="button"
+                className="export-option-btn"
+                onClick={handleDownloadExport}
+              >
+                <span className="export-option-icon">💾</span>
+                <span className="export-option-text">
+                  <span className="export-option-title">Скачать файл</span>
+                  <span className="export-option-desc">Формат Markdown (.md)</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="export-option-btn"
+                onClick={handleEmailExport}
+              >
+                <span className="export-option-icon">📧</span>
+                <span className="export-option-text">
+                  <span className="export-option-title">Отправить на почту</span>
+                  <span className="export-option-desc">Откроется почтовый клиент</span>
+                </span>
+              </button>
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowExportModal(false)}
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно управления сферами */}
+      {showSphereManager && (
+        <SphereManager onClose={() => setShowSphereManager(false)} />
       )}
     </div>
   );
